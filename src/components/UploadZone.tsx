@@ -171,7 +171,7 @@ export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProp
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic"
+          accept="image/jpeg,image/png,image/webp,image/heic,video/mp4,video/quicktime,video/x-m4v"
           multiple
           className="hidden"
           onChange={e => {
@@ -197,7 +197,7 @@ export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProp
               or tap to select from your camera roll
             </p>
             <p className="text-[10px] text-champagne/15 mt-2">
-              JPEG, PNG, WebP, HEIC up to 10MB
+              Images & Videos (MP4, MOV) up to 50MB
             </p>
           </div>
         </div>
@@ -225,15 +225,26 @@ export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProp
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
             {items.map(item => (
               <div key={item.id} className="relative group rounded-xl overflow-hidden aspect-square bg-night-card">
-                <img
-                  src={item.preview}
-                  alt=""
-                  className={cn(
-                    'w-full h-full object-cover transition-opacity',
-                    item.status === 'uploading' && 'opacity-50',
-                    item.status === 'error' && 'opacity-30'
-                  )}
-                />
+                {item.file.type.startsWith('video/') ? (
+                  <video
+                    src={item.preview}
+                    className={cn(
+                      'w-full h-full object-cover transition-opacity',
+                      item.status === 'uploading' && 'opacity-50',
+                      item.status === 'error' && 'opacity-30'
+                    )}
+                  />
+                ) : (
+                  <img
+                    src={item.preview}
+                    alt=""
+                    className={cn(
+                      'w-full h-full object-cover transition-opacity',
+                      item.status === 'uploading' && 'opacity-50',
+                      item.status === 'error' && 'opacity-30'
+                    )}
+                  />
+                )}
 
                 {/* Progress overlay */}
                 {item.status === 'uploading' && (
@@ -320,9 +331,15 @@ export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProp
 
 function getImageDimensions(src: string): Promise<{ width: number; height: number }> {
   return new Promise(resolve => {
-    const img = new Image()
-    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
-    img.onerror = () => resolve({ width: 0, height: 0 })
-    img.src = src
+    // Basic detection for video URL
+    if (src.startsWith('blob:')) {
+      // It's tricky to know if blob is video without type, but we can try loading as image first
+      const img = new Image()
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+      img.onerror = () => resolve({ width: 0, height: 0 })
+      img.src = src
+    } else {
+      resolve({ width: 0, height: 0 })
+    }
   })
 }

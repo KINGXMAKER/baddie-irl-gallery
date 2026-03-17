@@ -9,6 +9,10 @@ interface PhotoWithUrl extends Photo {
   url: string
 }
 
+function isVideo(url: string) {
+  return url.match(/\.(mp4|mov|m4v)$/i)
+}
+
 interface GalleryClientProps {
   event: Event
   photos: PhotoWithUrl[]
@@ -68,16 +72,38 @@ export default function GalleryClient({ event, photos }: GalleryClientProps) {
                   <div style={{ paddingBottom: '100%' }} />
                 )}
 
-                {/* Image */}
-                <img
-                  src={photo.url}
-                  alt={photo.uploader_name ? `Photo by ${photo.uploader_name}` : 'Event photo'}
-                  loading="lazy"
-                  onLoad={() => setLoadedImages(prev => new Set(prev).add(photo.id))}
-                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${
-                    loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
+                {/* Image or Video */}
+                {isVideo(photo.url) ? (
+                  <>
+                    <video
+                      src={photo.url}
+                      loop
+                      muted
+                      playsInline
+                      preload="metadata"
+                      onLoadedData={() => setLoadedImages(prev => new Set(prev).add(photo.id))}
+                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${
+                        loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    />
+                    {/* Video indicator icon */}
+                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white z-10 group-hover:opacity-0 transition-opacity">
+                      <svg className="w-3 h-3 translate-x-[1px]" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </>
+                ) : (
+                  <img
+                    src={photo.url}
+                    alt={photo.uploader_name ? `Photo by ${photo.uploader_name}` : 'Event photo'}
+                    loading="lazy"
+                    onLoad={() => setLoadedImages(prev => new Set(prev).add(photo.id))}
+                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${
+                      loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                )}
 
                 {/* Loading shimmer */}
                 {!loadedImages.has(photo.id) && (

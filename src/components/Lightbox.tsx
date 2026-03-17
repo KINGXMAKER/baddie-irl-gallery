@@ -66,13 +66,24 @@ export default function Lightbox({ src, alt, onClose, onPrev, onNext }: Lightbox
         </button>
       )}
 
-      {/* Image */}
-      <img
-        src={src}
-        alt={alt || 'Photo'}
-        onClick={e => e.stopPropagation()}
-        className="max-w-full max-h-[90vh] object-contain rounded-lg select-none"
-      />
+      {/* Image or Video */}
+      {src.match(/\.(mp4|mov|m4v)$/i) ? (
+        <video
+          src={src}
+          controls
+          autoPlay
+          playsInline
+          onClick={e => e.stopPropagation()}
+          className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+        />
+      ) : (
+        <img
+          src={src}
+          alt={alt || 'Photo'}
+          onClick={e => e.stopPropagation()}
+          className="max-w-full max-h-[90vh] object-contain rounded-lg select-none shadow-2xl"
+        />
+      )}
     </div>
   )
 }
