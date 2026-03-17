@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-champagne: #F5E6D3;
+  --color-champagne-light: #FFF8F0;
+  --color-gold: #C9A96E;
+  --color-gold-light: #E8D5A8;
+  --color-blush: #FF1493;
+  --color-blush-soft: rgba(255, 20, 147, 0.12);
+  --color-night: #0A0A0A;
+  --color-night-card: #141414;
+  --color-night-elevated: #1A1A1A;
+  --color-night-border: #262626;
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-playfair);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #0A0A0A;
+  color: #F5E6D3;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overscroll-behavior: none;
+}
+
+/* Hide scrollbar but allow scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Masonry columns */
+.masonry {
+  columns: 2;
+  column-gap: 12px;
+}
+@media (min-width: 768px) {
+  .masonry { columns: 3; column-gap: 16px; }
+}
+@media (min-width: 1024px) {
+  .masonry { columns: 4; column-gap: 16px; }
+}
+.masonry > * {
+  break-inside: avoid;
+  margin-bottom: 12px;
+}
+@media (min-width: 768px) {
+  .masonry > * { margin-bottom: 16px; }
+}
+
+/* Upload zone glow */
+.upload-zone-active {
+  border-color: #FF1493 !important;
+  background: rgba(255, 20, 147, 0.06) !important;
+  box-shadow: inset 0 0 80px rgba(255, 20, 147, 0.08);
+}
+
+/* Smooth image load */
+.img-loading {
+  background: linear-gradient(135deg, #141414 0%, #1A1A1A 50%, #141414 100%);
+  background-size: 200% 200%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Progress bar fill */
+.progress-fill {
+  background: linear-gradient(90deg, #FF1493, #C9A96E);
+  transition: width 0.3s ease;
+}
+
+/* Lightbox backdrop */
+.lightbox-backdrop {
+  backdrop-filter: blur(20px) saturate(0.5);
+  -webkit-backdrop-filter: blur(20px) saturate(0.5);
+}
