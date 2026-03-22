@@ -22,7 +22,7 @@ interface UploadZoneProps {
 export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProps) {
   const [items, setItems] = useState<UploadItem[]>([])
   const [isDragging, setIsDragging] = useState(false)
-  const [uploaderName, setUploaderName] = useState('')
+  const [instagramHandle, setInstagramHandle] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounter = useRef(0)
 
@@ -99,6 +99,9 @@ export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProp
         // Get image dimensions
         const dimensions = await getImageDimensions(item.preview)
 
+        // Clean up the instagram handle
+        const cleanHandle = instagramHandle.trim().replace(/^@/, '')
+
         // Insert DB record
         const { error: dbError } = await supabase
           .from('photos')
@@ -106,7 +109,8 @@ export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProp
             event_id: eventId,
             storage_path: storagePath,
             thumbnail_path: null,
-            uploader_name: uploaderName.trim() || null,
+            uploader_name: cleanHandle || null,
+            instagram_handle: cleanHandle || null,
             is_featured: false,
             is_hidden: false,
             width: dimensions.width,
@@ -140,18 +144,21 @@ export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProp
 
   return (
     <div className="space-y-6">
-      {/* Optional name input */}
+      {/* Instagram handle input */}
       <div>
         <label className="block text-[11px] font-semibold text-champagne/40 uppercase tracking-widest mb-2">
-          Your name <span className="text-champagne/20">(optional)</span>
+          Instagram Handle <span className="text-champagne/20">(so we can tag you)</span>
         </label>
-        <input
-          type="text"
-          value={uploaderName}
-          onChange={e => setUploaderName(e.target.value)}
-          placeholder="So we know who snapped these"
-          className="w-full bg-night-card border border-night-border rounded-xl py-3 px-4 text-sm text-champagne placeholder-champagne/25 focus:outline-none focus:border-blush/50 transition"
-        />
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-champagne/30 font-medium">@</span>
+          <input
+            type="text"
+            value={instagramHandle}
+            onChange={e => setInstagramHandle(e.target.value.replace(/^@/, ''))}
+            placeholder="yourhandle"
+            className="w-full bg-night-card border border-night-border rounded-xl py-3 pl-8 pr-4 text-sm text-champagne placeholder-champagne/25 focus:outline-none focus:border-blush/50 transition"
+          />
+        </div>
       </div>
 
       {/* Drop zone */}
@@ -191,7 +198,7 @@ export default function UploadZone({ eventId, onUploadComplete }: UploadZoneProp
           </div>
           <div className="text-center">
             <p className="text-base font-semibold text-champagne/80">
-              {isDragging ? 'Drop them here' : 'Drop your photos'}
+              {isDragging ? 'Drop them here' : 'Drop your best content'}
             </p>
             <p className="text-xs text-champagne/30 mt-1">
               or tap to select from your camera roll

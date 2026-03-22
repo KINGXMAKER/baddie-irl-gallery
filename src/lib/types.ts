@@ -14,6 +14,7 @@ export interface Photo {
   storage_path: string
   thumbnail_path: string | null
   uploader_name: string | null
+  instagram_handle: string | null
   is_featured: boolean
   is_hidden: boolean
   width: number | null

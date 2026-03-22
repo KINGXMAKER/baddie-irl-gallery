@@ -24,6 +24,7 @@ CREATE TABLE photos (
   storage_path TEXT NOT NULL,
   thumbnail_path TEXT,
   uploader_name TEXT,
+  instagram_handle TEXT,
   is_featured BOOLEAN DEFAULT FALSE,
   is_hidden BOOLEAN DEFAULT FALSE,
   width INTEGER,

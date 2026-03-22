@@ -31,10 +31,10 @@ export default function UploadClient({ eventId, eventName }: UploadClientProps) 
       <main className="flex-1 px-5 py-8 max-w-lg mx-auto w-full">
         <div className="space-y-2 mb-8">
           <h2 className="font-[family-name:var(--font-playfair)] text-3xl font-bold text-champagne-light">
-            Add your shots
+            Drop your best content
           </h2>
           <p className="text-sm text-champagne/40">
-            Upload your content from tonight. It goes straight to the gallery.
+            Photos & videos from Baddie IRL — we&apos;ll post the 🔥 ones and tag you.
           </p>
         </div>
 

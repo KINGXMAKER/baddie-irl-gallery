@@ -25,8 +25,8 @@ export default function Home() {
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg text-champagne/60 max-w-sm mx-auto leading-relaxed">
-            Captured tonight. Shared here.<br />
-            Drop your flicks and see the gallery.
+            Drop your best photos & videos from Baddie IRL<br />
+            we&apos;ll post the 🔥 ones and tag you.
           </p>
 
           {/* CTAs */}
@@ -38,7 +38,7 @@ export default function Home() {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              Upload Your Photos
+              Upload Your Content
             </Link>
             <Link
               href="/gallery"
