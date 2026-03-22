@@ -30,23 +30,26 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Masonry columns */
-.masonry {
-  columns: 2;
-  column-gap: 12px;
+/* Gallery grid — uniform squares */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 @media (min-width: 768px) {
-  .masonry { columns: 3; column-gap: 16px; }
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
 }
 @media (min-width: 1024px) {
-  .masonry { columns: 4; column-gap: 16px; }
+  .gallery-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
 }
-.masonry > * {
-  break-inside: avoid;
-  margin-bottom: 12px;
-}
-@media (min-width: 768px) {
-  .masonry > * { margin-bottom: 16px; }
+.gallery-item {
+  margin-bottom: 4px;
 }
 
 /* Upload zone glow */
