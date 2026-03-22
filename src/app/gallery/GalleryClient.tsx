@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Lightbox from '@/components/Lightbox'
 import type { Event, Photo } from '@/lib/types'
@@ -11,6 +11,50 @@ interface PhotoWithUrl extends Photo {
 
 function isVideo(url: string) {
   return url.match(/\.(mp4|mov|m4v)$/i)
+}
+
+// Generate a poster/thumbnail from a video URL using a hidden video + canvas
+function useVideoPoster(url: string, enabled: boolean): string | undefined {
+  const [poster, setPoster] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (!enabled) return
+    const video = document.createElement('video')
+    video.crossOrigin = 'anonymous'
+    video.muted = true
+    video.playsInline = true
+    video.preload = 'auto'
+    // Seek a tiny bit in to skip black frames
+    video.currentTime = 0.5
+
+    const handleSeeked = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = video.videoWidth || 320
+        canvas.height = video.videoHeight || 568
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+          setPoster(canvas.toDataURL('image/jpeg', 0.7))
+        }
+      } catch {
+        // CORS or other error — just skip poster
+      }
+      video.remove()
+    }
+
+    video.addEventListener('seeked', handleSeeked, { once: true })
+    video.addEventListener('error', () => video.remove(), { once: true })
+    video.src = url
+    video.load()
+
+    return () => {
+      video.removeEventListener('seeked', handleSeeked)
+      video.remove()
+    }
+  }, [url, enabled])
+
+  return poster
 }
 
 interface GalleryClientProps {
@@ -60,83 +104,14 @@ export default function GalleryClient({ event, photos }: GalleryClientProps) {
         ) : (
           <div className="masonry">
             {orderedPhotos.map((photo, index) => (
-              <div
+              <VideoAwareCard
                 key={photo.id}
-                onClick={() => setLightboxIndex(index)}
-                className="relative group cursor-pointer rounded-xl overflow-hidden bg-night-card"
-              >
-                {/* Aspect ratio placeholder */}
-                {photo.width && photo.height ? (
-                  <div style={{ paddingBottom: `${(photo.height / photo.width) * 100}%` }} />
-                ) : (
-                  <div style={{ paddingBottom: '100%' }} />
-                )}
-
-                {/* Image or Video */}
-                {isVideo(photo.url) ? (
-                  <>
-                    <video
-                      src={photo.url}
-                      loop
-                      muted
-                      playsInline
-                      preload="metadata"
-                      onLoadedData={() => setLoadedImages(prev => new Set(prev).add(photo.id))}
-                      className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${
-                        loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    />
-                    {/* Video indicator icon */}
-                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white z-10 group-hover:opacity-0 transition-opacity">
-                      <svg className="w-3 h-3 translate-x-[1px]" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                  </>
-                ) : (
-                  <img
-                    src={photo.url}
-                    alt={photo.uploader_name ? `Photo by ${photo.uploader_name}` : 'Event photo'}
-                    loading="lazy"
-                    onLoad={() => setLoadedImages(prev => new Set(prev).add(photo.id))}
-                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${
-                      loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  />
-                )}
-
-                {/* Loading shimmer */}
-                {!loadedImages.has(photo.id) && (
-                  <div className="absolute inset-0 img-loading" />
-                )}
-
-                {/* Featured badge */}
-                {photo.is_featured && (
-                  <div className="absolute top-2 left-2 px-2 py-1 rounded-full bg-gold/90 text-black text-[9px] font-bold uppercase tracking-wider">
-                    Featured
-                  </div>
-                )}
-
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  {photo.instagram_handle && (
-                    <div className="absolute bottom-2 left-2.5">
-                      <a
-                        href={`https://instagram.com/${photo.instagram_handle}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 text-[11px] text-white/80 font-medium hover:text-blush transition-colors"
-                      >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                        </svg>
-                        @{photo.instagram_handle}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
+                photo={photo}
+                index={index}
+                loadedImages={loadedImages}
+                setLoadedImages={setLoadedImages}
+                onSelect={setLightboxIndex}
+              />
             ))}
           </div>
         )}
@@ -158,6 +133,128 @@ export default function GalleryClient({ event, photos }: GalleryClientProps) {
       <footer className="text-center py-6 border-t border-night-border/30">
         <p className="text-[10px] text-champagne/20 uppercase tracking-widest">Bad Bitches Only</p>
       </footer>
+    </div>
+  )
+}
+
+// Separate component so each video card can use the useVideoPoster hook
+function VideoAwareCard({
+  photo,
+  index,
+  loadedImages,
+  setLoadedImages,
+  onSelect,
+}: {
+  photo: PhotoWithUrl
+  index: number
+  loadedImages: Set<string>
+  setLoadedImages: React.Dispatch<React.SetStateAction<Set<string>>>
+  onSelect: (index: number) => void
+}) {
+  const isVid = isVideo(photo.url)
+  const poster = useVideoPoster(photo.url, !!isVid)
+
+  // For videos, mark as loaded immediately since we show poster/gradient
+  useEffect(() => {
+    if (isVid) {
+      setLoadedImages(prev => new Set(prev).add(photo.id))
+    }
+  }, [isVid, photo.id, setLoadedImages])
+
+  return (
+    <div
+      onClick={() => onSelect(index)}
+      className="relative group cursor-pointer rounded-xl overflow-hidden bg-night-card"
+    >
+      {/* Aspect ratio placeholder */}
+      {photo.width && photo.height ? (
+        <div style={{ paddingBottom: `${(photo.height / photo.width) * 100}%` }} />
+      ) : (
+        <div style={{ paddingBottom: '133%' }} />
+      )}
+
+      {/* Image or Video */}
+      {isVid ? (
+        <>
+          {/* Poster image as background — always visible */}
+          {poster && (
+            <img
+              src={poster}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
+          {/* Video element — plays on hover (desktop) */}
+          <video
+            src={`${photo.url}#t=0.1`}
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            poster={poster}
+            onMouseEnter={e => {
+              const v = e.currentTarget
+              v.currentTime = 0
+              v.play().catch(() => {})
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.pause()
+              e.currentTarget.currentTime = 0
+            }}
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03]"
+          />
+          {/* Video play icon */}
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white z-10 pointer-events-none">
+            <svg className="w-3 h-3 translate-x-[1px]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+          {/* Dark gradient at bottom so play icon and handle are visible on any video */}
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+        </>
+      ) : (
+        <img
+          src={photo.url}
+          alt={photo.uploader_name ? `Photo by ${photo.uploader_name}` : 'Event photo'}
+          loading="lazy"
+          onLoad={() => setLoadedImages(prev => new Set(prev).add(photo.id))}
+          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] ${
+            loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
+
+      {/* Loading shimmer — only for images */}
+      {!isVid && !loadedImages.has(photo.id) && (
+        <div className="absolute inset-0 img-loading" />
+      )}
+
+      {/* Featured badge */}
+      {photo.is_featured && (
+        <div className="absolute top-2 left-2 px-2 py-1 rounded-full bg-gold/90 text-black text-[9px] font-bold uppercase tracking-wider">
+          Featured
+        </div>
+      )}
+
+      {/* Hover overlay with IG handle */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        {photo.instagram_handle && (
+          <div className="absolute bottom-2 left-2.5">
+            <a
+              href={`https://instagram.com/${photo.instagram_handle}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className="inline-flex items-center gap-1 text-[11px] text-white/80 font-medium hover:text-blush transition-colors"
+            >
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+              </svg>
+              @{photo.instagram_handle}
+            </a>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

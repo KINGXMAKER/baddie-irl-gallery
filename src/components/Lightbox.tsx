@@ -70,9 +70,10 @@ export default function Lightbox({ src, alt, instagramHandle, onClose, onPrev, o
       {/* Image or Video */}
       {src.match(/\.(mp4|mov|m4v)$/i) ? (
         <video
-          src={src}
+          src={`${src}#t=0.1`}
           controls
           autoPlay
+          muted
           playsInline
           onClick={e => e.stopPropagation()}
           className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
